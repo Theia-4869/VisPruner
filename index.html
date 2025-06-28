@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Beyond Text-Visual Attention: Exploiting Visual Cues for Effective Token Pruning in VLMs">
+  <meta name="keywords" content="vision language model, visual token pruning, training-free acceleration, inference efficiency">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VisPruner</title>
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/image/icon.png">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/js/all.min.js"></script>
+  <script type="module" src="https://gradio.s3-us-west-2.amazonaws.com/4.8.0/gradio.js"></script>
+</head>
+
+<style>
+  .expandable-card .card-text-container {
+    max-height: 200px;
+    overflow-y: hidden;
+    position: relative;
+  }
+
+  .expandable-card.expanded .card-text-container {
+    max-height: none;
+  }
+
+  .expand-btn {
+    position: relative;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.8);
+    /* margin-top: -20px; */
+    /* justify-content: center; */
+    color: #510c75;
+    border-color: transparent;
+  }
+
+  .expand-btn:hover {
+    background-color: rgba(200, 200, 200, 0.8);
+    text-decoration: none;
+    border-color: transparent;
+    color: #510c75;
+  }
+
+  .expand-btn:focus {
+    outline: none;
+    text-decoration: none;
+  }
+
+  .expandable-card:not(.expanded) .card-text-container:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 90px;
+    background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 1));
+  }
+
+  .expandable-card:not(.expanded) .expand-btn {
+    margin-top: -40px;
+  }
+
+  .card-body {
+    padding-bottom: 5px;
+  }
+
+  .vertical-flex-layout {
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .figure-img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .adjustable-font-size {
+    font-size: calc(0.5rem + 2vw);
+  }
+
+  .chat-history {
+    flex-grow: 1;
+    overflow-y: auto;
+    /* overflow-x: hidden; */
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 10px;
+  }
+
+  #gradio pre {
+    background-color: transparent;
+  }
+
+.author-block a {
+    color: #008AD7;
+    font-weight: normal;
+}
+
+/* Adjust the vertical alignment and font size of the superscript */
+.author-block a sup {
+    vertical-align: baseline;
+    position: relative;
+    top: -0.3em; /* Adjusts the position slightly above the baseline */
+    right: -0.1em; /* Adjusts the position slightly to the right */
+    font-size: smaller; /* Makes the font size smaller if needed */
+}
+
+</style>
+
+<body>
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-2 publication-title"><font color="#FF0000">[ICCV 2025]</font> ✂️ VisPruner<span class="is-size-2"><span class="is-size-1"></span></h1>
+            <h3 class="title is-3 publication-title">Beyond Text-Visual Attention: Exploiting Visual Cues <br> for Effective Token Pruning in VLMs </h3>
+            <div class="is-size-4 publication-authors">
+
+              <span class="author-block">
+                <a href="https://theia4869.com/">Qizhe Zhang<sup>1,2</sup></a>,
+              </span>
+
+              <span class="author-block">
+				<a href="https://github.com/codeman-cheng">Aosong Cheng<sup>1</sup></a>,
+              </span>
+
+              <span class="author-block">
+                <a href="https://lu-m13.github.io/">Ming Lu<sup>1</sup></a>,
+              </span>
+
+              <span class="author-block">
+                <a href="https://zrrskywalker.github.io/">Renrui Zhang<sup>3</sup></a>,
+              </span>
+            
+              <span class="author-block">
+				<a href="https://arthals.ink/">Zhiyong Zhuo<sup>1</sup></a>,
+              </span>
+			
+            </div>
+			  
+			<div class="is-size-4 publication-authors">
+			  
+			  <span class="author-block">
+			    <a href="https://github.com/hey-cjj">Jiajun Cao<sup>1</sup></a>,
+			  </span>
+			  
+			  <span class="author-block">
+			    <a href="https://scholar.google.com/citations?user=RdDDC9MAAAAJ">Shaobo Guo<sup>2</sup></a>,
+			  </span>
+			  
+			  <span class="author-block">
+			    <a href="https://qi-she.net/">Qi She<sup>2</sup></a>,
+			  </span>
+
+              <span class="author-block">
+                <a href="https://www.shanghangzhang.com/">Shanghang Zhang<sup>1,&#9993;</sup></a>
+              </span>
+
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>&#9993;</sup>Corresponding Author</span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+			  <span class="author-block">
+				<sup>1</sup> School of Computer Science, Peking University
+			  </span>
+			</div>
+			
+			<div class="is-size-5 publication-authors">
+			  <span class="author-block">
+				<sup>2</sup> ByteDance
+			  </span>
+			  
+			  <span class="author-block">
+				<sup>3</sup> CUHK MMLab
+			  </span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="https://arxiv.org/abs/2412.01818" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                    </span>
+                    <span>Paper</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/Theia-4869/VisPruner" target="_blank"
+                    class="external-link button is-normal is-rounded is-dark">
+                    <span class="icon">
+                      <i class="fab fa-github"></i>
+                    </span>
+                    <span>Code</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- <section class="section"  style="background-color:#efeff081">
+    <div class="container is-max-desktop" id="gradio">
+      <gradio-app src="https://vip-llava-2.hliu.cc"></gradio-app>
+    </div>
+  </section> -->
+
+  <section class="section" style="background-color:#efeff081">
+    <div class="container is-max-desktop">
+      <!-- Abstract -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-six-fifths">
+          <h2 class="title is-3">Abstract</h2>
+          <div class="content has-text-justified">
+            <p>
+			  Large vision-language models (LVLMs) generally contain significantly more visual tokens than their textual counterparts, 
+			  resulting in a considerable computational burden. Recent efforts have been made to tackle this issue by pruning visual 
+			  tokens early within the language model. Most existing works use attention scores between text and visual tokens to assess 
+			  the importance of visual tokens. However, in this study, we first analyze the text-visual attention in the language model 
+			  and find that this score is not an ideal indicator for token pruning. Based on the analysis, We propose <b>VisPruner</b>, 
+			  a plug-and-play method that utilizes visual cues for more effective token pruning in LVLMs. Specifically, we first use 
+			  visual attention to select a limited number of significant tokens. Then, we remove duplicate tokens from the remaining 
+			  ones based on their similarity. By retaining diverse tokens alongside the initially selected important tokens, we maximally 
+			  preserve the visual information of the input image. Experimental results demonstrate that our VisPruner sustains strong 
+			  performance across various VLM architectures and reduction ratios, significantly outperforming existing methods based on 
+			  text-visual attention. Notably, without any training, VisPruner can reduce the FLOPs of LLaVA-1.5-7B by 91% and inference 
+			  latency by 75%, while maintaining comparable performance. Our code is available at <a href="https://github.com/Theia-4869/VisPruner">https://github.com/Theia-4869/VisPruner</a>.
+           </p>
+          </div>
+			<centering>
+				<div style="text-align: center;">
+				  <img id="teaser" width="100%" src="static/image/case.png">
+				</div>
+			</centering>
+        </div>
+      </div>
+        
+    </div>
+  </section>
+
+	<section class="section">
+		<!-- Text-Visual Attention Investigation -->
+		<div class="columns is-centered has-text-centered">
+			<div class="column is-six-fifths">
+				<h2 class="title is-3">Text-Visual Attention Investigation</h2>
+			</div>
+		</div>
+		
+		<div class="container is-max-desktop">
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<div class="content has-text-justified">
+				
+						<p>
+							Most existing works use attention scores between text and visual tokens to assess the importance of visual tokens. 
+							However, in this study, we first analyze the text-visual attention in the language model and find that this score 
+							<b>is not an ideal indicator for token pruning</b>.
+						</p>
+
+						<p>
+							We conduct an in-depth analysis of text-visual attention inside the LLM and make two findings termed 
+							<b><i>attention shift</i></b> and <b><i>attention dispersion</i></b>, corresponding to the <b>position</b> and 
+							<b>intensity</b> of text-visual attention respectively. These phenomena are <b>absent</b> in the <b>visual encoder</b> 
+							of VLMs, which motivates our use of <b>visual cues</b> as a more reliable indicator of visual token importance.
+						</p>
+
+					</div>
+				</div>
+			</div>
+			
+			<div class="columns is-centered has-text-centered">
+				<div class="column is-six-fifths">
+					<h3 class="title is-4">Text-Visual Attention Shift</h3>
+				</div>
+			</div>
+			
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<div class="content has-text-justified"> 
+						<p>
+							There is a clear positive correlation between the selection frequency and the attention received, along with a 
+							noticeable shift in text-visual attention. <b>Text tokens tend to focus on visual tokens with higher indices, due 
+							to the long-term decay property of rotary position embedding.</b> In the input sequence of the language model, 
+							text tokens are located after visual tokens, thus text tokens exhibit higher attention towards later-positioned 
+							visual tokens. It can be seen that <b>positional bias appears from the first layer and is more pronounced in the 
+							shallower layers</b>. 
+						</p>
+					</div>
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="100%" style="margin-bottom: 20px" src="static/image/attn_shift.png">     
+						</div>
+					</centering>
+					<div class="content has-text-justified">
+						<p>
+							A natural question arises: <b>In the presence of inherent positional bias, do higher attention scores necessarily 
+							represent richer visual information?</b> In the <b>shallow layers</b> of the model, <b>visual tokens located in the central 
+							region maintain the highest performance</b>, rather than those positioned later, which received the most text attention. 
+							The difference between these two diminishes as the positional bias weakens after the 10th model layer.
+						</p>
+					</div>
+				</div>
+			</div>
+			
+			<div class="columns is-centered has-text-centered">
+				<div class="column is-six-fifths">
+					<h3 class="title is-4">Text-Visual Attention Dispersion</h3>
+				</div>
+			</div>
+
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<div class="content has-text-justified"> 
+						<p>
+							Given the negative impact of attention shift caused by rotary position embedding on pruning, an intuitive idea is to <b>use
+							text-visual attention devoid of position embedding decay as a basis for pruning</b>. Unfortunately, although this practice 
+							eliminates positional bias, we find another phenomenon present both before and after the removal of position embedding, which we call <b>attention dispersion</b>.
+						</p>
+					</div>
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="100%" style="margin-bottom: 10px" src="static/image/attn_dispersion_1.png">
+						</div>
+					</centering>
+					<div class="content has-text-justified"> 
+						<p>
+							Different from the extreme peak in [<tt>CLS</tt>] attention, the density of last attention both before and after removing 
+							position embedding shows high entropy and low peak, resembling a more uniform distribution. <b>Here, highly concentrated attention 
+							indicates that the model identifies important tokens with high certainty, whereas a uniform distribution implies greater difficulty 
+							in selecting important tokens based on attention scores.</b>
+						</p>
+					</div>
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="100%" src="static/image/attn_dispersion_2.png">
+						</div>
+					</centering>
+					<div class="content has-text-justified" style="margin-top: 10px;">
+						<p>
+							After eliminating the long-term decay brought by positional embedding, pruning results improved across all benchmarks, further 
+							demonstrating <b>the adverse impact of positional bias</b>. However, pruning based on last attention still lags behind random 
+							pruning on some benchmarks. <b>We attribute this gap partly to attention dispersion, which makes it difficult to identify 
+							important tokens with rich visual information based on attention.</b> Pruning based on [<tt>CLS</tt>] attention consistently 
+							achieves optimal results, motivating us to exploit visual cues for more effective token pruning.
+						</p>
+					</div>
+				</div>
+			</div>
+		
+		</div>
+	</section>
+  
+	<section class="section">
+		<!-- Exploiting Visual Cues for Token Pruning -->
+		<div class="columns is-centered has-text-centered">
+			<div class="column is-six-fifths">
+				<h2 class="title is-3">Exploiting Visual Cues for Token Pruning</h2>
+			</div>
+		</div>
+		
+	<div class="container is-max-desktop">
+		<div class="columns is-centered">
+			<div class="column is-full-width">
+				<div class="content has-text-justified"> 
+					<p>
+						Based on the above analysis of attention in VLMs, we propose <b>VisPruner</b>, which exploits visual cues for more effective token 
+						pruning. We first select a small portion of <b>important</b> tokens with rich information based on the <b>attention</b> from the 
+						visual encoder. Then, we retain another set of <b>diverse</b> tokens from the remaining ones based on their <b>similarity</b> as a 
+						complement. These two parts together maintain the high performance of the model even after a significant reduction of visual tokens.
+					</p>
+				</div>
+				<centering>
+					<div style="text-align: center;">
+						<img id="teaser" width="100%" style="margin-bottom: 20px" src="static/image/pipeline.png">     
+					</div>
+				</centering>  
+				<div class="content has-text-justified"> 
+					<p>
+						We begin by selecting a small portion of important tokens with rich information, based on the [<tt>CLS</tt>] attention from the 
+						visual encoder. For the remaining tokens, we progressively remove duplicates based on similarity, ultimately retaining another set 
+						of diverse tokens. These two parts complement each other, ensuring that the model maintains comparable performance even after a 
+						significant reduction of visual tokens.
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	</section>
+	
+	<section class="section">
+		<!-- Performance Comparison -->
+		<div class="columns is-centered has-text-centered">
+			<div class="column is-six-fifths">
+				<h2 class="title is-3">Performance Comparison</h2>
+			</div>
+		</div>
+		
+		<div class="container is-max-desktop">
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<div class="content has-text-justified">
+						<p>
+							we validate <b>VisPruner</b> against multiple existing methods across various <b>VLM architectures</b> on comprehensive multi-modal benchmarks, 
+							including <b>high-resolution</b> image and <b>video</b> understanding tasks.
+						</p>
+					</div>
+				</div>
+			</div>
+			
+			<div class="columns is-centered has-text-centered">
+				<div class="column is-six-fifths">
+					<h3 class="title is-4">LLaVA-1.5-7B</h3>
+				</div>
+			</div>
+			
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="100%" src="static/image/llava-1.5-7b.png">     
+						</div>
+					</centering>
+				</div>
+			</div>
+			
+			<div class="columns is-centered has-text-centered">
+				<div class="column is-six-fifths">
+					<h3 class="title is-4">LLaVA-NeXT-7B</h3>
+				</div>
+			</div>
+			
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="75%" src="static/image/llava-next-7b.png">     
+						</div>
+					</centering>
+				</div>
+			</div>
+			
+			<div class="columns is-centered has-text-centered">
+				<div class="column is-six-fifths">
+					<h3 class="title is-4">Video-LLaVA</h3>
+				</div>
+			</div>
+			
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="75%" src="static/image/video-llava.png">     
+						</div>
+					</centering>
+				</div>
+			</div>
+			
+			<div class="columns is-centered has-text-centered">
+				<div class="column is-six-fifths">
+					<h3 class="title is-4">Other VLM Architectures</h3>
+				</div>
+			</div>
+			
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="75%" src="static/image/other-vlm.png">     
+						</div>
+					</centering>
+				</div>
+			</div>
+		
+		</div>
+	</section>
+	
+	<section class="section">
+		<!-- Efficiency Comparison -->
+		<div class="columns is-centered has-text-centered">
+			<div class="column is-six-fifths">
+				<h2 class="title is-3">Efficiency Comparison</h2>
+			</div>
+		</div>
+		
+		<div class="container is-max-desktop">
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<div class="content has-text-justified">
+						<p>
+							We compare the computational efficiency between <b>FastV</b> and our <b>VisPruner</b> under LLaVA-NeXT-7B. 
+							Unlike FastV, which prune visual token <b>within</b> the LLM, FasterVLM prunes tokens <b>before</b> the LLM, 
+							enabling compatibility with <b>FlashAttention</b>. This design results in <b>significantly higher</b> efficiency. 
+							Note that the original implementation of <b>SDPA</b> also includes FlashAttention, so its computational efficiency
+							is comparable to that of FlashAttention2, with only slight differences. All efficiency analyses are performed on 
+							a single NVIDIA A100-80GB GPU, evaluated using the POPE benchmark.
+						</p>
+					</div>
+				</div>
+			</div>
+			
+			<div class="columns is-centered">
+				<div class="column is-full-width">
+					<centering>
+						<div style="text-align: center;">
+							<img id="teaser" width="75%" src="static/image/efficiency.png">     
+						</div>
+					</centering>
+				</div>
+			</div>
+		
+		</div>
+	</section>
+	<section class="section" id="Contact">
+	  <div class="container is-max-desktop content">
+	    <h2 class="title">Contact</h2>
+			<p>
+				If you have any questions, please feel free to contact us:
+			</p>
+			<ul style="list-style-type: none; padding: 0; margin-left: 50px">
+				<li><span style="font-weight: bold;">Qizhe Zhang: </span><span><a href="mailto:theia@pku.edu.cn">theia@pku.edu.cn</a></span></li>
+				<li><span style="font-weight: bold;">Shanghang Zhang: </span><span><a href="mailto:shanghang@pku.edu.cn">shanghang@pku.edu.cn</a></span></li>
+			</ul>
+	  </div>
+	</section>
+
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+        <pre><code>
+@article{zhang2025vispruner,
+  title={Beyond Text-Visual Attention: Exploiting Visual Cues for Effective Token Pruning in VLMs}, 
+  author={Zhang, Qizhe and Cheng, Aosong and Lu, Ming and Zhang, Renrui and Zhuo, Zhiyong and Cao, Jiajun and Guo, Shaobo and She, Qi and Zhang, Shanghang},
+  journal={arXiv preprint arXiv:2412.01818},
+  year={2025},
+}
+		</code></pre>
+    </div>
+  </section>
+
+</body>
+
+</html>
