@@ -15,6 +15,7 @@ python -m llava.eval.model_vqa_science \
     --image-folder ${DATA_DIR}/scienceqa/images/test \
     --answers-file ./playground/data/eval/scienceqa/answers/${SPLIT}/${CKPT}/n_${TOKEN}/r_${RATIO}.jsonl \
     --visual_token_num ${TOKEN} \
+    --important_ratio ${RATIO} \
     --single-pred-prompt \
     --temperature 0 \
     --conv-mode vicuna_v1

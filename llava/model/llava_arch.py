@@ -158,7 +158,7 @@ class LlavaMetaForCausalLM(ABC):
 
         # [VisPruner] Remove duplicate tokens by iterative matching and pruning
         image_normalized = image_features / image_features.norm(dim=-1, keepdim=True) # (B, N, C)
-        while True:
+        while diverse_token_num > 0:
             R = residual_indices.shape[1]
             r = min(8, R - diverse_token_num)
             if r <= 0:
@@ -175,7 +175,10 @@ class LlavaMetaForCausalLM(ABC):
                 residual_indices[..., 1::2]
             ], dim=-1) # (B, R - r)
 
-        selected_indices = torch.cat([important_indices, residual_indices], dim=-1) # (B, T)
+        if diverse_token_num > 0:
+            selected_indices = torch.cat([important_indices, residual_indices], dim=-1) # (B, T)
+        else:
+            selected_indices = important_indices # (B, T)
         index_masks = torch.zeros(B, N, dtype=torch.bool, device=device)
         index_masks.scatter_(1, selected_indices, True)
 

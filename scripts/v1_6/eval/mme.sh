@@ -15,6 +15,7 @@ python -m llava.eval.model_vqa_loader \
     --image-folder ${DATA_DIR}/MME/MME_Benchmark_release_version \
     --answers-file ./playground/data/eval/MME/answers/${SPLIT}/${CKPT}/n_${TOKEN}/r_${RATIO}.jsonl \
     --visual_token_num ${TOKEN} \
+    --important_ratio ${RATIO} \
     --temperature 0 \
     --conv-mode vicuna_v1
 

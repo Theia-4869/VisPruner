@@ -23,6 +23,7 @@ for IDX in $(seq 0 $((CHUNKS-1))); do
         --num-chunks ${CHUNKS} \
         --chunk-idx ${IDX} \
         --visual_token_num ${TOKEN} \
+        --important_ratio ${RATIO} \
         --temperature 0 \
         --conv-mode vicuna_v1 &
 done
