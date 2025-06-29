@@ -5,7 +5,12 @@
 [📄 [Paper](https://arxiv.org/abs/2412.01818)] [🌐 [Project Page](https://theia4869.com/VisPruner)]
 
 ## 📰 News
-🔥 [2025/06/24] A new version of [FasterVLM](https://github.com/Theia-4869/FasterVLM) named VisPruner is released!
+
+🔥 **[2026/06/28]** Our [Project Page](https://theia4869.com/VisPruner) is updated!
+
+🔥 **[2025/06/26]** Our [VisPruner](https://arxiv.org/abs/2412.01818) is accepted by ICCV 2025! 🎉
+
+🔥 **[2025/06/24]** A new version of [FasterVLM](https://github.com/Theia-4869/FasterVLM) named VisPruner is released!
 
 ## 👁️ Overview
 
