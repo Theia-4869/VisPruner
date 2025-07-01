@@ -6,7 +6,7 @@
 
 ## 📰 News
 
-🔥 **[2026/06/28]** Our [Project Page](https://theia4869.com/VisPruner) is updated!
+🔥 **[2025/06/28]** Our [Project Page](https://theia4869.com/VisPruner) is updated!
 
 🔥 **[2025/06/26]** Our [VisPruner](https://arxiv.org/abs/2412.01818) is accepted by ICCV 2025! 🎉
 
